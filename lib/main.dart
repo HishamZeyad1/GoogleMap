@@ -4,11 +4,13 @@ import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_map/gmap.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
 
 void main() {
-  runApp(const MyApp());
+  // runApp(const MyApp());
+  runApp(MaterialApp(title: 'Google Map',home: GMap('Flutter Google Map'),));
 }
 
 class MyApp extends StatelessWidget {
@@ -26,9 +28,7 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
   final String title;
-
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
@@ -38,8 +38,10 @@ class _MyHomePageState extends State<MyHomePage> {
   Position? currentLocation;
   double? latitude, longitude;
   CameraPosition? _kGooglePlex;
+
   // final Completer<GoogleMapController> _controller =Completer<GoogleMapController>();
   GoogleMapController? gmc;
+  Set<Marker>? markers;
 
   Future<void> getPostion() async {
     bool services;
@@ -77,8 +79,8 @@ class _MyHomePageState extends State<MyHomePage> {
     longitude = currentLocation!.longitude;
 
     // print("altitude: ${currentLocation!.altitude}");
-    // print("latitude: $latitude");
-    // print("longitude: $longitude");
+    print("latitude: $latitude");
+    print("longitude: $longitude");
     //الخدمة غير مدعومة في الموقعي قطاع غزة
     // List<Placemark> placemarks = await placemarkFromCoordinates(currentLocation!.latitude,currentLocation!.longitude);
     // List<Placemark> placemarks = await placemarkFromCoordinates(31.083150, 33.894583);
@@ -90,9 +92,69 @@ class _MyHomePageState extends State<MyHomePage> {
     // print("distanceKM:$distanceKM");
     _kGooglePlex = CameraPosition(
       target: LatLng(latitude!, longitude!),
-      zoom: 13,
+      zoom: 10,
     );
+    markers = {
+      Marker(
+        markerId: MarkerId("1"),
+        position: LatLng(latitude!, longitude!),
+        infoWindow: InfoWindow(
+          title: "الرئيسي",
+          onTap: () {
+            print("1");
+            print("Tap info Marker");
+          },
+        ),
+        onTap: () {
+          print("Tap Marker");
+        },
+      ),
+      Marker(
+        markerId: MarkerId("2"),
+        position: LatLng(31.40, 34.38),
+        draggable: true,
+        onDragEnd: (LatLng) {
+          print("onDragEnd:$LatLng");
+        },
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        infoWindow: InfoWindow(
+            title: "الفرعي",
+            onTap: () {
+              print("2");
+            }),
+        onTap: () {
+          print("Tap info Marker");
+        },
+      )
+    };
+    // await setMarkerCustomImage();
     setState(() {});
+  }
+
+  setMarkerCustomImage() async {
+    markers!.add(Marker(
+      markerId: MarkerId("3"),
+      position: LatLng(31.261192, 34.319348),
+      draggable: true,
+      onDragEnd: (LatLng) {
+        // markers!.remove(Marker(markerId: MarkerId("2")));
+        // markers!.add(Marker(markerId: MarkerId("2"),position:LatLng ,icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        // ));
+        print("onDragEnd:$LatLng");
+      },
+      icon: await BitmapDescriptor.fromAssetImage(
+        ImageConfiguration(size: Size.square(2)),
+        "images/logo.png",
+      ),
+      infoWindow: InfoWindow(
+          title: "الفرعي 2",
+          onTap: () {
+            print("3");
+          }),
+      onTap: () {
+        print("Tap info Marker");
+      },
+    ));
   }
 
   @override
@@ -116,9 +178,20 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: GoogleMap(
                     mapType: MapType.normal,
                     initialCameraPosition: _kGooglePlex!,
+                    markers: markers!,
+                    onTap: (latlng) {
+                      markers!.remove(Marker(markerId: MarkerId("2")));
+                      markers!.add(Marker(
+                        markerId: MarkerId("2"),
+                        position: latlng,
+                        icon: BitmapDescriptor.defaultMarkerWithHue(
+                            BitmapDescriptor.hueGreen),
+                      ));
+                      setState(() {});
+                    },
                     onMapCreated: (GoogleMapController controller) {
                       // _controller.complete(controller);
-                      gmc=controller;
+                      gmc = controller;
                     },
                   ),
                 ),
@@ -126,14 +199,17 @@ class _MyHomePageState extends State<MyHomePage> {
                   height: 10,
                 ),
                 ElevatedButton(
-                  onPressed: ()async{
+                  onPressed: () async {
                     // gmc!.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: LatLng(21.257062,39.859601),zoom: 8/**/,bearing: 90,tilt:90 )));
                     // gmc!.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(target: LatLng(21.257062,39.859601),zoom: 8/**/,bearing: 90,tilt:90 )));
-                    LatLng xy=await gmc!.getLatLng(ScreenCoordinate(x: 10, y: 10));
+                    LatLng xy =
+                        await gmc!.getLatLng(ScreenCoordinate(x: 10, y: 10));
                     print(xy);
                   },
                   child: Text("Go to Maka"),
-                  style: ElevatedButton.styleFrom(minimumSize: Size(200, 50),),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(200, 50),
+                  ),
                 ),
                 SizedBox(
                   height: 10,
